@@ -12,13 +12,21 @@ class LaravelMailerCommand extends Command
 
     public function handle(): int
     {
-        $user = $this->ask('Introduce el valor para EMAIL_AUTH_USER');
-        $password = $this->ask('Introduce el valor para EMAIL_AUTH_PASSWORD');
+        $host = $this->ask('Introduce el host SMTP');
+        $port = $this->ask('Introduce el puerto SMTP');
+        $scheme = $this->ask('Introduce el protocolo (scheme) SMTP');
+        $user = $this->ask('Introduce el usuario SMTP');
+        $password = $this->ask('Introduce la contraseña SMTP');
+        $name = $this->ask('Introduce el nombre del remitente');
 
         $configPath = config_path('mailer.php');
         $config = file_exists($configPath) ? include $configPath : [];
-        $config['EMAIL_AUTH_USER'] = $user;
-        $config['EMAIL_AUTH_PASSWORD'] = $password;
+        $config['smtp_host'] = $host;
+        $config['smtp_port'] = $port;
+        $config['smtp_scheme'] = $scheme;
+        $config['smtp_username'] = $user;
+        $config['smtp_password'] = $password;
+        $config['smtp_name'] = $name;
 
         $configContent = '<?php\n\nreturn ' . var_export($config, true) . ';';
         file_put_contents($configPath, $configContent);
