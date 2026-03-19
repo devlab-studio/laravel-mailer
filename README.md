@@ -24,35 +24,10 @@ Instala el paquete vía composer:
 composer require devlab-studio/laravel-mailer
 ```
 
-
-Publica y ejecuta las migraciones:
-
-```bash
-php artisan vendor:publish --tag=laravel-mailer-migrations
-php artisan migrate
-```
-
-
-Publica el archivo de configuración:
-
-```bash
-php artisan vendor:publish --tag=laravel-mailer-config
-```
-
-
 Configura el usuario y contraseña SMTP ejecutando:
 
 ```bash
 php artisan laravel-mailer
-```
-
-## Seeders
-
-
-Ejecuta los seeders para crear los datos iniciales:
-
-```bash
-php artisan db:seed --class=EmailSendersTableSeeder
 ```
 
 ## Recursos

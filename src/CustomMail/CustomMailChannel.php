@@ -220,7 +220,7 @@ class CustomMailChannel
                         'transport' => 'smtp',
                         'host' => $sender->server,
                         'port' => $sender->port,
-                        'username' => decrypt($sender->auth_user),
+                        'username' => $sender->auth_user,
                         'password' => decrypt($sender->auth_password),
                         'encryption' => $sender->auth_protocol,
                     ],

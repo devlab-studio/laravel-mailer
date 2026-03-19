@@ -2,6 +2,7 @@
 
 namespace Devlab\LaravelMailer\Commands;
 
+use Devlab\LaravelMailer\Database\Seeders\EmailSendersTableSeeder;
 use Illuminate\Console\Command;
 
 class LaravelMailerCommand extends Command
@@ -19,19 +20,43 @@ class LaravelMailerCommand extends Command
         $password = $this->ask('Introduce la contraseña SMTP');
         $name = $this->ask('Introduce el nombre del remitente');
 
-        $configPath = config_path('mailer.php');
-        $config = file_exists($configPath) ? include $configPath : [];
-        $config['smtp_host'] = $host;
-        $config['smtp_port'] = $port;
-        $config['smtp_scheme'] = $scheme;
-        $config['smtp_username'] = $user;
-        $config['smtp_password'] = $password;
-        $config['smtp_name'] = $name;
+        $config_path = config_path('mail.mailers.php');
+        if (!file_exists($config_path)) {
+            $config = [
+                'mail' => [
+                    'mailers' => [
+                        'smtp' => [
+                            'host' => $host,
+                            'port' => $port,
+                            'scheme' => $scheme,
+                            'username' => $user,
+                            'password' => $password,
+                        ],
+                            'from' => [
+                            'name' => $name,
+                        ],
+                    ],
 
-        $configContent = '<?php\n\nreturn ' . var_export($config, true) . ';';
-        file_put_contents($configPath, $configContent);
+                ]
+
+            ];
+        } else {
+            $config = include $config_path;
+            $config['mail']['mailers']['smtp']['host'] = $host;
+            $config['mail']['mailers']['smtp']['port'] = $port;
+            $config['mail']['mailers']['smtp']['scheme'] = $scheme;
+            $config['mail']['mailers']['smtp']['username'] = $user;
+            $config['mail']['mailers']['smtp']['password'] = $password;
+            $config['mail']['mailers']['from']['name'] = $name;
+        }
+
+        $content = '<?php\n\nreturn ' . var_export($config, true) . ';';
+        file_put_contents($config_path, $content);
 
         $this->info('Configuración guardada correctamente en config/mailer.php');
+
+        $this->call(EmailSendersTableSeeder::class);
+        $this->info('Seeder EmailSendersTableSeeder ejecutado correctamente.');
         return self::SUCCESS;
     }
 }

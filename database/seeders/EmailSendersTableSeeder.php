@@ -12,7 +12,7 @@ class EmailSendersTableSeeder extends Seeder
         EmailSender::create([
             'id' => 1,
             'address' => config('mail.mailers.smtp.username'),
-            'name' => config('mail.from.name'),
+            'name' => config('mail.mailers.from.name'),
             'server' => config('mail.mailers.smtp.host'),
             'port' => config('mail.mailers.smtp.port'),
             'use_auth' => 1,
