@@ -14,44 +14,28 @@ class LaravelMailerCommand extends Command
     public function handle(): int
     {
         $host = $this->ask('Introduce el host SMTP');
-        $port = $this->ask('Introduce el puerto SMTP');
-        $scheme = $this->ask('Introduce el protocolo (scheme) SMTP');
+        $port = $this->ask('Introduce el puerto SMTP', 587);
+        $scheme = $this->ask('Introduce el protocolo de encriptación SMTP (tls, ssl, null)', 'tls');
         $user = $this->ask('Introduce el usuario SMTP');
         $password = $this->ask('Introduce la contraseña SMTP');
+        $address = $this->ask('Introduce el email del remitente');
         $name = $this->ask('Introduce el nombre del remitente');
 
-        $config_path = config_path('mail.mailers.php');
-        if (!file_exists($config_path)) {
-            $config = [
-                'mail' => [
-                    'mailers' => [
-                        'smtp' => [
-                            'host' => $host,
-                            'port' => $port,
-                            'scheme' => $scheme,
-                            'username' => $user,
-                            'password' => $password,
-                        ],
-                            'from' => [
-                            'name' => $name,
-                        ],
-                    ],
+        config([
+            'mail.mailers.smtp' => [
+                'transport' => 'smtp',
+                'host' => $host,
+                'port' => $port,
+                'encryption' => $scheme,
+                'username' => $user,
+                'password' => $password
+            ],
+            'mail.from' => [
+                'address' => $address,
+                'name' => $name,
+            ],
+        ]);
 
-                ]
-
-            ];
-        } else {
-            $config = include $config_path;
-            $config['mail']['mailers']['smtp']['host'] = $host;
-            $config['mail']['mailers']['smtp']['port'] = $port;
-            $config['mail']['mailers']['smtp']['scheme'] = $scheme;
-            $config['mail']['mailers']['smtp']['username'] = $user;
-            $config['mail']['mailers']['smtp']['password'] = $password;
-            $config['mail']['mailers']['from']['name'] = $name;
-        }
-
-        $content = '<?php\n\nreturn ' . var_export($config, true) . ';';
-        file_put_contents($config_path, $content);
 
         $this->info('Configuración guardada correctamente en config/mailer.php');
 

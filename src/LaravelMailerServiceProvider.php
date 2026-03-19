@@ -24,7 +24,6 @@ class LaravelMailerServiceProvider extends PackageServiceProvider
         $required = [
             config('mail.mailers.smtp.host'),
             config('mail.mailers.smtp.port'),
-            config('mail.mailers.smtp.scheme'),
             config('mail.mailers.smtp.username'),
             config('mail.mailers.smtp.password'),
             config('mail.mailers.from.name'),

@@ -58,7 +58,7 @@ class CustomMailChannel
 
         // Send notification to the $notifiable instance...
         $mailer_info = $this->setMailer($from ?? null);
-        $mailer = $mailer_info['mailer'];
+        $mailer = Mail::mailer($mailer_info['mailer']);
         $from_name = $mailer_info['from_name'];
         try{
             $mailer->send($message->view, $message->viewData, function ($mail) use ($from, $from_name, $to, $message, $bd_email) {
@@ -208,31 +208,27 @@ class CustomMailChannel
 
     protected function setMailer($from)
     {
-        $default_mailer = ($from != config('devlab.MAIL_FROM_ADDRESS')) ? false : true;
         $mailer_name = 'smtp';
         $from_name = config('devlab.MAIL_FROM_NAME');
 
-        if (!$default_mailer) {
-            $sender = EmailSender::where('address', $from)->get()->first();
-            if ($sender) {
-                config([
-                    'mail.mailers.custom'.$sender->id => [
-                        'transport' => 'smtp',
-                        'host' => $sender->server,
-                        'port' => $sender->port,
-                        'username' => $sender->auth_user,
-                        'password' => decrypt($sender->auth_password),
-                        'encryption' => $sender->auth_protocol,
-                    ],
-                ]);
-                $mailer_name = 'custom'.$sender->id;
-                $from_name = $sender->name;
-            }
+        $sender = EmailSender::where('address', $from)->get()->first();
+        if ($sender) {
+            config([
+                'mail.mailers.custom'.$sender->id => [
+                    'transport' => 'smtp',
+                    'host' => $sender->server,
+                    'port' => $sender->port,
+                    'username' => $sender->auth_user,
+                    'password' => decrypt($sender->auth_password),
+                    'encryption' => $sender->auth_protocol,
+                ],
+            ]);
+            $mailer_name = 'custom'.$sender->id;
+            $from_name = $sender->name;
         }
-        Mail::mailer($mailer_name);
 
         return [
-            'mailer' => Mail::mailer($mailer_name),
+            'mailer' => $mailer_name,
             'from_name' => $from_name,
         ];
     }

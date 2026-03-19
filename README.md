@@ -30,6 +30,14 @@ Configura el usuario y contraseña SMTP ejecutando:
 php artisan laravel-mailer
 ```
 
+### Ejecutar Seeder de Remitentes
+
+Para poblar la tabla de mailers con datos iniciales, ejecuta el siguiente comando:
+
+```bash
+php artisan db:seed --class=EmailSendersTableSeeder
+```
+
 ## Recursos
 
 
