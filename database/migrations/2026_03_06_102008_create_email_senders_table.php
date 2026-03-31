@@ -20,7 +20,7 @@ return new class extends Migration
             $table->tinyInteger('use_auth')->default(1);
             $table->string('auth_protocol', 45);
             $table->string('auth_user', 45);
-            $table->string('auth_password', 45);
+            $table->string('auth_password', 1000);
             $table->timestamps();
             $table->softDeletes()->index();
         });
