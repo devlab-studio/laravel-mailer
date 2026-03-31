@@ -33,7 +33,8 @@
     "autoload": {
         "psr-4": {
             "Devlab\\LaravelMailer\\": "src/",
-            "Devlab\\LaravelMailer\\Database\\Factories\\": "database/factories/"
+            "Devlab\\LaravelMailer\\Database\\Factories\\": "database/factories/",
+            "Devlab\\LaravelMailer\\Database\\Seeders\\": "database/seeders/"
         }
     },
     "autoload-dev": {
