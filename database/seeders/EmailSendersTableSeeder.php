@@ -15,8 +15,8 @@ class EmailSendersTableSeeder extends Seeder
         $records = [
             [
                 'id' => 1,
-                'address' => config('mail.mailers.from.address'),
-                'name' => config('mail.mailers.from.name'),
+                'address' => config('mail.from.address'),
+                'name' => config('mail.from.name'),
                 'server' => config('mail.mailers.smtp.host'),
                 'port' => config('mail.mailers.smtp.port'),
                 'use_auth' => 1,
