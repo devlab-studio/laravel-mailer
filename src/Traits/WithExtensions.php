@@ -9,12 +9,6 @@ use Illuminate\Support\Pluralizer;
 
 trait WithExtensions
 {
-    public function getTokenAttribute() {
-        return dlSign::sign($this->id);
-    }
-    public function getDlSignAttribute() {
-        return dlSign::sign($this->attributes['id']);
-    }
     public function scopeWhereInto(Builder $query, $field, $value)
     {
         if (is_array($value)) {

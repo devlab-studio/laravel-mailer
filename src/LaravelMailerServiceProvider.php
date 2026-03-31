@@ -21,6 +21,10 @@ class LaravelMailerServiceProvider extends PackageServiceProvider
     public function boot()
     {
         parent::boot();
+
+        // Charge migrations
+        $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
+
         $required = [
             config('mail.mailers.smtp.host'),
             config('mail.mailers.smtp.port'),
