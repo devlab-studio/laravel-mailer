@@ -16,21 +16,17 @@ class LaravelMailerServiceProvider extends PackageServiceProvider
             ->runsMigrations('create_email_senders_table')
             ->runsMigrations('create_emails_emails_attachments_table')
             ->runsMigrations('create_emails_table')
-            ->hasCommand(LaravelMailerCommand::class);    }
+            ->hasCommand(LaravelMailerCommand::class);
+    }
 
-    public function boot()
+    public function packageRegistered()
     {
-        parent::boot();
-
-        // Charge migrations
-        $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
-
         $required = [
             config('mail.mailers.smtp.host'),
             config('mail.mailers.smtp.port'),
             config('mail.mailers.smtp.username'),
             config('mail.mailers.smtp.password'),
-            config('mail.mailers.from.name'),
+            config('mail.from.name'),
         ];
         $missing = false;
         foreach ($required as $value) {
@@ -44,6 +40,14 @@ class LaravelMailerServiceProvider extends PackageServiceProvider
                 $this->outputMissingConfigMessage();
             }
         }
+    }
+
+    public function boot()
+    {
+        parent::boot();
+
+        // Charge migrations
+        $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
     }
 
     protected function outputMissingConfigMessage()
