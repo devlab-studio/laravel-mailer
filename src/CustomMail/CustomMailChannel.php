@@ -141,7 +141,7 @@ class CustomMailChannel
         $bd_email->created_user = config('constants.users.system');
         $bd_email->save();
 
-        $path = 'private/attachments/' . today()->year . '/'  . today()->month . '/'. today()->day;
+        $path = 'attachments/' . today()->year . '/'  . today()->month . '/'. today()->day;
         if (!Storage::exists($path)){
             Storage::makeDirectory($path);
         }
