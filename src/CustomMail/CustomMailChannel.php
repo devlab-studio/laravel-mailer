@@ -165,7 +165,7 @@ class CustomMailChannel
             } elseif (is_string($attachment['file'])) {
                 $file_path = $attachment['file'];
                 $file_name = basename($attachment['file']);
-                $mime_type = mime_content_type($attachment['file']);
+                $mime_type = mime_content_type(Storage::path($attachment['file']));
 
                 $attachment_path = $path . '/' .now()->format('His') . '-' . $file_name;
                 Storage::copy($this->getCleanPath($file_path), $attachment_path);
