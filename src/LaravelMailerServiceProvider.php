@@ -3,6 +3,8 @@
 namespace Devlab\LaravelMailer;
 
 use Devlab\LaravelMailer\Commands\LaravelMailerCommand;
+use Devlab\LaravelMailer\Listeners\ValidateSmtpConfiguration;
+use Illuminate\Mail\Events\MessageSending;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -22,8 +24,23 @@ class LaravelMailerServiceProvider extends PackageServiceProvider
     {
         parent::boot();
 
-        // Charge migrations
+        // Load migrations
         $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
+
+        // Show configuration warning only on first installation (in console)
+        if (app()->runningInConsole()) {
+            $this->checkAndNotifyMissingConfiguration();
+        }
+    }
+
+    protected function checkAndNotifyMissingConfiguration()
+    {
+        $markerFile = storage_path('.laravel-mailer-notified');
+
+        // Only show message if it hasn't been shown before
+        if (file_exists($markerFile)) {
+            return;
+        }
 
         $required = [
             config('mail.mailers.smtp.host'),
@@ -32,22 +49,19 @@ class LaravelMailerServiceProvider extends PackageServiceProvider
             config('mail.mailers.smtp.password'),
             config('mail.mailers.from.name'),
         ];
-        $missing = false;
+
+        $isMissing = false;
         foreach ($required as $value) {
             if (empty($value)) {
-                $missing = true;
+                $isMissing = true;
                 break;
             }
         }
-        if ($missing) {
-            if (app()->runningInConsole()) {
-                $this->outputMissingConfigMessage();
-            }
-        }
-    }
 
-    protected function outputMissingConfigMessage()
-    {
-        echo "\n[laravel-mailer] Falta configuración del SMTP. Ejecuta: php artisan laravel-mailer para configurarlo y ejecutar el seeder.\n";
+        if ($isMissing) {
+            echo "\n[laravel-mailer] Falta configuración del SMTP. Ejecuta: php artisan laravel-mailer para configurarlo y ejecutar el seeder.\n";
+            // Create marker file to prevent showing this message again
+            @file_put_contents($markerFile, '');
+        }
     }
 }
