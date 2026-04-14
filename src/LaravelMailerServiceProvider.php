@@ -18,36 +18,17 @@ class LaravelMailerServiceProvider extends PackageServiceProvider
             ->runsMigrations('create_email_senders_table')
             ->runsMigrations('create_emails_emails_attachments_table')
             ->runsMigrations('create_emails_table')
-            ->hasCommand(LaravelMailerCommand::class);    }
-
-    public function boot()
-    {
-        parent::boot();
-
-        // Load migrations
-        $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
-
-        // Show configuration warning only on first installation (in console)
-        if (app()->runningInConsole()) {
-            $this->checkAndNotifyMissingConfiguration();
-        }
+            ->hasCommand(LaravelMailerCommand::class);
     }
 
-    protected function checkAndNotifyMissingConfiguration()
+    public function packageRegistered()
     {
-        $markerFile = storage_path('.laravel-mailer-notified');
-
-        // Only show message if it hasn't been shown before
-        if (file_exists($markerFile)) {
-            return;
-        }
-
         $required = [
             config('mail.mailers.smtp.host'),
             config('mail.mailers.smtp.port'),
             config('mail.mailers.smtp.username'),
             config('mail.mailers.smtp.password'),
-            config('mail.mailers.from.name'),
+            config('mail.from.name'),
         ];
 
         $isMissing = false;
@@ -57,11 +38,23 @@ class LaravelMailerServiceProvider extends PackageServiceProvider
                 break;
             }
         }
-
         if ($isMissing) {
-            echo "\n[laravel-mailer] Falta configuración del SMTP. Ejecuta: php artisan laravel-mailer para configurarlo y ejecutar el seeder.\n";
-            // Create marker file to prevent showing this message again
-            @file_put_contents($markerFile, '');
+            if (app()->runningInConsole()) {
+                $this->outputMissingConfigMessage();
+            }
         }
+    }
+
+    public function boot()
+    {
+        parent::boot();
+
+        // Charge migrations
+        $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
+    }
+
+    protected function outputMissingConfigMessage()
+    {
+        echo "\n[laravel-mailer] Falta configuración del SMTP. Ejecuta: php artisan laravel-mailer para configurarlo y ejecutar el seeder.\n";
     }
 }

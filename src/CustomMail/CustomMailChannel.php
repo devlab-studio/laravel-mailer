@@ -141,7 +141,7 @@ class CustomMailChannel
         $bd_email->created_user = config('constants.users.system');
         $bd_email->save();
 
-        $path = 'private/attachments/' . today()->year . '/'  . today()->month . '/'. today()->day;
+        $path = 'attachments/' . today()->year . '/'  . today()->month . '/'. today()->day;
         if (!Storage::exists($path)){
             Storage::makeDirectory($path);
         }
@@ -165,7 +165,7 @@ class CustomMailChannel
             } elseif (is_string($attachment['file'])) {
                 $file_path = $attachment['file'];
                 $file_name = basename($attachment['file']);
-                $mime_type = mime_content_type($attachment['file']);
+                $mime_type = mime_content_type(Storage::path($attachment['file']));
 
                 $attachment_path = $path . '/' .now()->format('His') . '-' . $file_name;
                 Storage::copy($this->getCleanPath($file_path), $attachment_path);
