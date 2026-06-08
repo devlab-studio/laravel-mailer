@@ -30,6 +30,8 @@ class CustomMailChannel
 
         if (app()->environment('local') && config('devlab.MAIL_DEV_TO')) {
             $to = config('devlab.MAIL_DEV_TO');
+        } elseif (empty($to)) {
+            $to = config('mail.from.address');
         }
 
         if (get_class($message) == Mailable::class) {
@@ -40,7 +42,11 @@ class CustomMailChannel
         }
 
         if (empty($from)) {
-            $from = config('devlab.MAIL_FROM_ADDRESS');
+            if (app()->environment('local') && config('devlab.MAIL_FROM_ADDRESS')) {
+                $from = config('devlab.MAIL_FROM_ADDRESS');
+            } else {
+                $from = config('mail.from.address');
+            }
         }
 
         $bd_email = $this->logMail($from, $to, $message);
@@ -209,7 +215,11 @@ class CustomMailChannel
     protected function setMailer($from)
     {
         $mailer_name = 'smtp';
-        $from_name = config('devlab.MAIL_FROM_NAME');
+        if (app()->environment('local') && config('devlab.MAIL_FROM_NAME')) {
+            $from_name = config('devlab.MAIL_FROM_NAME');
+        } else {
+            $from_name = config('mail.from.name');
+        }
 
         $sender = EmailSender::where('address', $from)->get()->first();
         if ($sender) {
