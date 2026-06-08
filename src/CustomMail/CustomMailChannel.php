@@ -28,9 +28,10 @@ class CustomMailChannel
         $to = get_class($notifiable) == AnonymousNotifiable::class
             ? $notifiable->routes['mail'] ?? null : $notifiable->email;
 
+    
         if (app()->environment('local') && config('devlab.MAIL_DEV_TO')) {
             $to = config('devlab.MAIL_DEV_TO');
-        } elseif (empty($to)) {
+        } elseif (empty($to) && config('mail.from.address')) {
             $to = config('mail.from.address');
         }
 
