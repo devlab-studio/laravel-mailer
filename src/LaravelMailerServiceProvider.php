@@ -18,7 +18,8 @@ class LaravelMailerServiceProvider extends PackageServiceProvider
             ->runsMigrations('create_email_senders_table')
             ->runsMigrations('create_emails_emails_attachments_table')
             ->runsMigrations('create_emails_table')
-            ->hasCommand(LaravelMailerCommand::class);
+            // ->hasCommand(LaravelMailerCommand::class)
+            ;
     }
 
     public function packageRegistered()
