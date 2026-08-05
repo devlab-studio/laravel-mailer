@@ -10,6 +10,8 @@ use Spatie\LaravelPackageTools\PackageServiceProvider;
 
 class LaravelMailerServiceProvider extends PackageServiceProvider
 {
+    protected static bool $missingConfigMessageShown = false;
+
     public function configurePackage(Package $package): void
     {
         $package
@@ -23,6 +25,10 @@ class LaravelMailerServiceProvider extends PackageServiceProvider
 
     public function packageRegistered()
     {
+        if (self::$missingConfigMessageShown) {
+            return;
+        }
+
         $required = [
             config('mail.mailers.smtp.host'),
             config('mail.mailers.smtp.port'),
@@ -40,6 +46,7 @@ class LaravelMailerServiceProvider extends PackageServiceProvider
         }
         if ($isMissing) {
             if (app()->runningInConsole()) {
+                self::$missingConfigMessageShown = true;
                 $this->outputMissingConfigMessage();
             }
         }

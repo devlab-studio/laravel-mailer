@@ -145,7 +145,7 @@ class CustomMailChannel
 
         $bd_email->body = $htmlBody;
         $bd_email->subject = $message->subject ?? null;
-        $bd_email->created_user = config('constants.users.system');
+        $bd_email->created_user = config('constants.users.system') ?: null;
         $bd_email->save();
 
         $path = 'attachments/' . today()->year . '/'  . today()->month . '/'. today()->day;
@@ -186,7 +186,7 @@ class CustomMailChannel
             $attachment->path = $attachment_path;
             $attachment->extension = pathinfo($file_name, PATHINFO_EXTENSION);
             $attachment->mime_type = $mime_type;
-            $attachment->created_user = config('constants.users.system');
+            $attachment->created_user = config('constants.users.system') ?: null;
             $attachment->email_id = $bd_email->id;
             $attachment->save();
         }
@@ -203,7 +203,7 @@ class CustomMailChannel
                 $attachment->path = $attachment_path;
                 $attachment->extension = pathinfo($file_name, PATHINFO_EXTENSION);
                 $attachment->mime_type = $mime_type;
-                $attachment->created_user = config('constants.users.system');
+                $attachment->created_user = config('constants.users.system') ?: null;
                 $attachment->email_id = $bd_email->id;
                 $attachment->save();
             }

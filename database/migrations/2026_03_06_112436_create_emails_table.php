@@ -25,11 +25,11 @@ return new class extends Migration
             $table->tinyInteger('sent')->default(0);
             $table->smallInteger('state')->default(0);
             $table->smallInteger('retries')->default(0);
-            $table->string('shipping_id', 45);
+            $table->string('shipping_id', 45)->nullable();
             $table->text('error')->nullable();
             $table->timestamps();
             $table->softDeletes()->index();
-            $table->foreignId('created_user')->constrained('users');
+            $table->foreignId('created_user')->nullable()->constrained('users')->nullOnDelete();
         });
     }
 

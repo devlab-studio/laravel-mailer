@@ -36,10 +36,9 @@ class LaravelMailerCommand extends Command
             ],
         ]);
 
+        $this->info('Configuración SMTP aplicada correctamente en memoria.');
 
-        $this->info('Configuración guardada correctamente en config/mailer.php');
-
-        $this->call(EmailSendersTableSeeder::class);
+        app(EmailSendersTableSeeder::class)->run();
         $this->info('Seeder EmailSendersTableSeeder ejecutado correctamente.');
         return self::SUCCESS;
     }

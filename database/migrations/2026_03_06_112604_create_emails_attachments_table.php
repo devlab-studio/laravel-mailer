@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('mime_type', 100)->nullable();
             $table->timestamps();
             $table->softDeletes()->index();
-            $table->foreignId('created_user')->constrained('users');
+            $table->foreignId('created_user')->nullable()->constrained('users')->nullOnDelete();
         });
     }
 
