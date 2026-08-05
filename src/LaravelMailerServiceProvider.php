@@ -29,6 +29,14 @@ class LaravelMailerServiceProvider extends PackageServiceProvider
             return;
         }
 
+        if (! app()->runningInConsole()) {
+            return;
+        }
+
+        if (file_exists($this->missingConfigNoticePath())) {
+            return;
+        }
+
         $required = [
             config('mail.mailers.smtp.host'),
             config('mail.mailers.smtp.port'),
@@ -45,10 +53,9 @@ class LaravelMailerServiceProvider extends PackageServiceProvider
             }
         }
         if ($isMissing) {
-            if (app()->runningInConsole()) {
-                self::$missingConfigMessageShown = true;
-                $this->outputMissingConfigMessage();
-            }
+            self::$missingConfigMessageShown = true;
+            $this->rememberMissingConfigMessageShown();
+            $this->outputMissingConfigMessage();
         }
     }
 
@@ -63,5 +70,21 @@ class LaravelMailerServiceProvider extends PackageServiceProvider
     protected function outputMissingConfigMessage()
     {
         echo "\n[laravel-mailer] Falta configuración del SMTP. Ejecuta: php artisan laravel-mailer para configurarlo y ejecutar el seeder.\n";
+    }
+
+    protected function missingConfigNoticePath(): string
+    {
+        return storage_path('framework/laravel-mailer-notice-shown');
+    }
+
+    protected function rememberMissingConfigMessageShown(): void
+    {
+        $directory = dirname($this->missingConfigNoticePath());
+
+        if (! is_dir($directory)) {
+            @mkdir($directory, 0755, true);
+        }
+
+        @file_put_contents($this->missingConfigNoticePath(), '');
     }
 }
