@@ -29,7 +29,7 @@ return new class extends Migration
             $table->text('error')->nullable();
             $table->timestamps();
             $table->softDeletes()->index();
-            $table->foreignId('created_user')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('created_user')->nullable()->nullable()->constrained('users')->nullOnDelete();
         });
     }
 
