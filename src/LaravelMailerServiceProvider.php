@@ -65,6 +65,9 @@ class LaravelMailerServiceProvider extends PackageServiceProvider
 
         // Charge migrations
         $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
+
+        // Load routes
+        $this->loadRoutesFrom(__DIR__ . '/routes/web.php');
     }
 
     protected function outputMissingConfigMessage()
