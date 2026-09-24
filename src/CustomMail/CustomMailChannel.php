@@ -4,9 +4,12 @@ namespace Devlab\LaravelMailer\CustomMail;
 
 
 use Devlab\LaravelMailer\CustomMail\Exceptions\EmptyDestinationsException;
+use Devlab\LaravelMailer\Data\EmailMessage;
 use Devlab\LaravelMailer\Models\Email;
 use Devlab\LaravelMailer\Models\EmailsAttachment;
 use Devlab\LaravelMailer\Models\EmailSender;
+use Devlab\LaravelMailer\Services\Email\EmailProviderFactory;
+use Devlab\LaravelMailer\Services\Email\EmailService;
 use Illuminate\Contracts\Mail\Mailable;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -28,7 +31,7 @@ class CustomMailChannel
         $to = get_class($notifiable) == AnonymousNotifiable::class
             ? $notifiable->routes['mail'] ?? null : $notifiable->email;
 
-    
+
         if (app()->environment('local') && config('devlab.MAIL_DEV_TO')) {
             $to = config('devlab.MAIL_DEV_TO');
         } elseif (empty($to) && config('mail.from.address')) {
@@ -68,46 +71,70 @@ class CustomMailChannel
         $mailer = Mail::mailer($mailer_info['mailer']);
         $from_name = $mailer_info['from_name'];
         try{
-            $mailer->send($message->view, $message->viewData, function ($mail) use ($from, $from_name, $to, $message, $bd_email) {
-                $mail->from($from, $from_name);
-                if(!empty($to)) {
-                    if (is_string($to)) {
-                        $address = str_replace(',', ';', $to);
-                        $address = str_replace(' ', '', $address);
-                        $address = explode(';', $address);
-                    } else {
-                        $address = $to;
-                    }
-                    $mail->to($address);
-                }
-                if(!empty($message->cc)){
-                    if (is_string($message->cc)) {
-                        $address = str_replace(',', ';', $message->cc);
-                        $address = str_replace(' ', '', $address);
-                        $address = explode(';', $address);
-                    } else {
-                        $address = $message->cc;
-                    }
-                    $mail->cc($address);
-                }
-                if(!empty($message->bcc)){
-                    if (is_string($message->bcc)) {
-                        $address = str_replace(',', ';', $message->bcc);
-                        $address = str_replace(' ', '', $address);
-                        $address = explode(';', $address);
-                    } else {
-                        $address = $message->bcc;
-                    }
-                    $mail->bcc($address);
-                }
-                $mail->subject($message->subject ?? null);
+            if ($mailer_info['mailer'] === 'google' || $mailer_info['mailer'] === 'microsoft') {
+                $attachments = [];
                 foreach ($bd_email->attachments as $attachment) {
-                    $mail->attach(Storage::path($attachment->path), [
-                        'as' => $attachment->name,
+                    $attachments[] = [
+                        'path' => $attachment->path,
+                        'name' => $attachment->name,
                         'mime' => $attachment->mime_type,
-                    ]);
+                        'content' => ($attachment->path && is_readable($attachment->path) ? file_get_contents($attachment->path) : ''),
+                    ];
                 }
-            });
+                $email_message = new EmailMessage(
+                    to: $to,
+                    replyTo: $message->replyTo ?? '',
+                    subject: $message->subject,
+                    html: $message->body,
+                    fromName: $from_name,
+                    cc: is_array($message->cc) ? $message->cc : [$message->cc],
+                    bcc: is_array($message->bcc) ? $message->bcc : [$message->bcc],
+                    attachments: $attachments,
+                );
+                $mailer = $mailer_info['mailer_class'];
+                $mailer->send($mailer_info['sender'], $email_message);
+            } else {
+                $mailer->send($message->view, $message->viewData, function ($mail) use ($from, $from_name, $to, $message, $bd_email) {
+                    $mail->from($from, $from_name);
+                    if(!empty($to)) {
+                        if (is_string($to)) {
+                            $address = str_replace(',', ';', $to);
+                            $address = str_replace(' ', '', $address);
+                            $address = explode(';', $address);
+                        } else {
+                            $address = $to;
+                        }
+                        $mail->to($address);
+                    }
+                    if(!empty($message->cc)){
+                        if (is_string($message->cc)) {
+                            $address = str_replace(',', ';', $message->cc);
+                            $address = str_replace(' ', '', $address);
+                            $address = explode(';', $address);
+                        } else {
+                            $address = $message->cc;
+                        }
+                        $mail->cc($address);
+                    }
+                    if(!empty($message->bcc)){
+                        if (is_string($message->bcc)) {
+                            $address = str_replace(',', ';', $message->bcc);
+                            $address = str_replace(' ', '', $address);
+                            $address = explode(';', $address);
+                        } else {
+                            $address = $message->bcc;
+                        }
+                        $mail->bcc($address);
+                    }
+                    $mail->subject($message->subject ?? null);
+                    foreach ($bd_email->attachments as $attachment) {
+                        $mail->attach(Storage::path($attachment->path), [
+                            'as' => $attachment->name,
+                            'mime' => $attachment->mime_type,
+                        ]);
+                    }
+                });
+            }
         } catch(\Exception $e) {
             $bd_email->error = $e->getMessage();
             $bd_email->sent = 1;
@@ -216,6 +243,7 @@ class CustomMailChannel
     protected function setMailer($from)
     {
         $mailer_name = 'smtp';
+        $mailer_class = null;
         if (app()->environment('local') && config('devlab.MAIL_FROM_NAME')) {
             $from_name = config('devlab.MAIL_FROM_NAME');
         } else {
@@ -224,23 +252,30 @@ class CustomMailChannel
 
         $sender = EmailSender::where('address', $from)->get()->first();
         if ($sender) {
-            config([
-                'mail.mailers.custom'.$sender->id => [
-                    'transport' => 'smtp',
-                    'host' => $sender->server,
-                    'port' => $sender->port,
-                    'username' => $sender->auth_user,
-                    'password' => decrypt($sender->auth_password),
-                    'encryption' => $sender->auth_protocol,
-                ],
-            ]);
-            $mailer_name = 'custom'.$sender->id;
+            if ($sender->mailer === 'google' || $sender->mailer === 'microsoft') {
+                $mailer_class = new EmailService(app(EmailProviderFactory::class));
+                $mailer_name = $sender->mailer;
+            } else {
+                config([
+                    'mail.mailers.custom'.$sender->id => [
+                        'transport' => 'smtp',
+                        'host' => $sender->server,
+                        'port' => $sender->port,
+                        'username' => $sender->auth_user,
+                        'password' => decrypt($sender->auth_password),
+                        'encryption' => $sender->auth_protocol,
+                    ],
+                ]);
+                $mailer_name = 'custom'.$sender->id;
+            }
             $from_name = $sender->name;
         }
 
         return [
             'mailer' => $mailer_name,
+            'mailer_class' => $mailer_class,
             'from_name' => $from_name,
+            'sender' => $sender,
         ];
     }
 
