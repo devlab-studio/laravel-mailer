@@ -103,7 +103,7 @@ class GoogleEmailProvider implements EmailProvider
         EmailMessage $message
     ): string {
         $headers = [
-            'From: ' . $account->email,
+            'From: ' . $account->address,
             'To: ' . $message->to,
             'Subject: ' . $message->subject,
             'MIME-Version: 1.0',
