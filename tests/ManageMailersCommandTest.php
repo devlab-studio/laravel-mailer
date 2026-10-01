@@ -11,7 +11,7 @@ beforeEach(function () {
 });
 
 it('registers a new smtp mailer', function () {
-    $this->artisan('laravel-mailer:mailers', ['--mailer' => 'smtp'])
+    $this->artisan('mailer:config', ['--mailer' => 'smtp'])
         ->expectsQuestion('Email del remitente', 'info@example.com')
         ->expectsQuestion('Nombre del remitente', 'Info')
         ->expectsQuestion('Host SMTP', 'smtp.example.com')
@@ -34,7 +34,7 @@ it('registers a new smtp mailer', function () {
 });
 
 it('registers a new google mailer', function () {
-    $this->artisan('laravel-mailer:mailers')
+    $this->artisan('mailer:config')
         ->expectsQuestion('¿Qué tipo de mailer quieres gestionar?', 'google')
         ->expectsQuestion('Email del remitente', 'gmail@example.com')
         ->expectsQuestion('Nombre del remitente', 'Gmail')
@@ -85,7 +85,7 @@ it('registers a google mailer reusing credentials from another account', functio
         'expires_at' => '2026-09-25T12:18:54.454825Z',
     ]);
 
-    $this->artisan('laravel-mailer:mailers', ['--mailer' => 'google'])
+    $this->artisan('mailer:config', ['--mailer' => 'google'])
         ->expectsQuestion('¿Qué quieres hacer?', 'create')
         ->expectsQuestion('Email del remitente', 'second@example.com')
         ->expectsQuestion('Nombre del remitente', 'Second')
@@ -117,7 +117,7 @@ it('updates a microsoft mailer keeping secret, tokens and smtp columns', functio
         'expires_at' => '2026-09-22T12:21:06.667272Z',
     ]);
 
-    $this->artisan('laravel-mailer:mailers', ['--mailer' => 'microsoft'])
+    $this->artisan('mailer:config', ['--mailer' => 'microsoft'])
         ->expectsQuestion('¿Qué quieres hacer?', 'update')
         ->expectsQuestion('Selecciona el mailer a modificar', $sender->id)
         ->expectsQuestion('Email del remitente', 'ms@example.com')
@@ -148,7 +148,7 @@ it('resets tokens when microsoft tenant changes', function () {
         'expires_at' => '2026-09-22T12:21:06.667272Z',
     ]);
 
-    $this->artisan('laravel-mailer:mailers', ['--mailer' => 'microsoft'])
+    $this->artisan('mailer:config', ['--mailer' => 'microsoft'])
         ->expectsQuestion('¿Qué quieres hacer?', 'update')
         ->expectsQuestion('Selecciona el mailer a modificar', $sender->id)
         ->expectsQuestion('Email del remitente', 'ms@example.com')
@@ -166,7 +166,7 @@ it('resets tokens when microsoft tenant changes', function () {
 });
 
 it('discards changes when not confirmed', function () {
-    $this->artisan('laravel-mailer:mailers', ['--mailer' => 'google'])
+    $this->artisan('mailer:config', ['--mailer' => 'google'])
         ->expectsQuestion('Email del remitente', 'gmail@example.com')
         ->expectsQuestion('Nombre del remitente', 'Gmail')
         ->expectsQuestion('Client ID', 'client-id')
@@ -181,12 +181,12 @@ it('discards changes when not confirmed', function () {
 it('fails when the mailer migration has not been run', function () {
     Schema::dropColumns('email_senders', ['mailer', 'mailer_data']);
 
-    $this->artisan('laravel-mailer:mailers')
+    $this->artisan('mailer:config')
         ->expectsOutputToContain('php artisan migrate')
         ->assertFailed();
 });
 
 it('rejects an unknown mailer type', function () {
-    $this->artisan('laravel-mailer:mailers', ['--mailer' => 'sendgrid'])
+    $this->artisan('mailer:config', ['--mailer' => 'sendgrid'])
         ->assertFailed();
 });
