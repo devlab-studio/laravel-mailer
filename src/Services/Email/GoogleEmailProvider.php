@@ -105,7 +105,7 @@ class GoogleEmailProvider implements EmailProvider
         $headers = [
             'From: ' . $account->address,
             'To: ' . $message->to,
-            'Subject: ' . $message->subject,
+            'Subject: ' . $this->encodeHeader($message->subject),
             'MIME-Version: 1.0',
         ];
 
@@ -143,12 +143,25 @@ class GoogleEmailProvider implements EmailProvider
         $mimeType = $attachment['mime']
             ?? ($path && is_readable($path) ? (mime_content_type($path) ?: null) : null)
             ?? 'application/octet-stream';
+        $name = $this->encodeHeader($name);
 
         return 'Content-Type: ' . $mimeType . '; name="' . $name . '"' . "\r\n"
             . 'Content-Disposition: attachment; filename="' . $name . '"' . "\r\n"
             . "Content-Transfer-Encoding: base64\r\n\r\n"
             . chunk_split(base64_encode($content))
             . "\r\n";
+    }
+
+    /**
+     * Las cabeceras MIME solo admiten ASCII: el resto se codifica según RFC 2047.
+     */
+    private function encodeHeader(string $value): string
+    {
+        if (mb_check_encoding($value, 'ASCII')) {
+            return $value;
+        }
+
+        return '=?UTF-8?B?' . base64_encode($value) . '?=';
     }
 
     private function base64UrlEncode(

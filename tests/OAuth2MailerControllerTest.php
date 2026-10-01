@@ -147,3 +147,94 @@ it('refreshes the microsoft token against the stored tenant', function () {
         ->access_token->toBe('refreshed-access')
         ->refresh_token->toBe('old-refresh');
 });
+
+function fakeIdToken(array $claims): string
+{
+    $encode = fn (array $data) => rtrim(strtr(base64_encode(json_encode($data)), '+/', '-_'), '=');
+
+    return $encode(['alg' => 'RS256', 'typ' => 'JWT']).'.'.$encode($claims).'.signature';
+}
+
+it('overwrites the sender identity with the authorized google account', function () {
+    Http::fake([
+        'www.googleapis.com/*' => Http::response([
+            'access_token' => 'new-access',
+            'refresh_token' => 'new-refresh',
+            'expires_in' => 3600,
+            'id_token' => fakeIdToken(['email' => 'real.account@gmail.com', 'name' => 'Cuenta Real']),
+        ]),
+    ]);
+
+    $this->withSession(['sender_email' => 'gmail@example.com'])
+        ->get('/auth/google-mail/callback?code=auth-code')
+        ->assertOk()
+        ->assertHeader('Content-Type', 'text/plain; charset=UTF-8')
+        ->assertSee('Cuenta Real <real.account@gmail.com>', false);
+
+    expect($this->sender->refresh())
+        ->address->toBe('real.account@gmail.com')
+        ->auth_user->toBe('real.account@gmail.com')
+        ->name->toBe('Cuenta Real')
+        ->and($this->sender->mailer_data['refresh_token'])->toBe('new-refresh');
+});
+
+it('overwrites the sender identity with the authorized microsoft account', function () {
+    $sender = microsoftSender();
+
+    Http::fake([
+        'login.microsoftonline.com/*' => Http::response([
+            'access_token' => 'ms-access',
+            'refresh_token' => 'ms-refresh',
+            'expires_in' => 3600,
+            'id_token' => fakeIdToken(['preferred_username' => 'roberto@empresa.onmicrosoft.com', 'name' => 'Roberto Simón']),
+        ]),
+    ]);
+
+    $this->withSession(['sender_email' => 'ms@example.com'])
+        ->get('/auth/microsoft-mail/callback?code=auth-code')
+        ->assertOk();
+
+    expect($sender->refresh())
+        ->address->toBe('roberto@empresa.onmicrosoft.com')
+        ->name->toBe('Roberto Simón');
+});
+
+it('rejects the authorization when the account is already another sender', function () {
+    microsoftSender(['client_id' => 'other']);
+    EmailSender::where('address', 'ms@example.com')->update(['mailer' => 'google']);
+
+    Http::fake([
+        'www.googleapis.com/*' => Http::response([
+            'access_token' => 'new-access',
+            'refresh_token' => 'new-refresh',
+            'expires_in' => 3600,
+            'id_token' => fakeIdToken(['email' => 'ms@example.com', 'name' => 'Duplicada']),
+        ]),
+    ]);
+
+    $this->withSession(['sender_email' => 'gmail@example.com'])
+        ->get('/auth/google-mail/callback?code=auth-code')
+        ->assertStatus(409);
+
+    expect($this->sender->refresh())
+        ->address->toBe('gmail@example.com')
+        ->and($this->sender->mailer_data['refresh_token'])->toBeNull();
+});
+
+it('keeps the sender identity when no id_token is returned', function () {
+    Http::fake([
+        'www.googleapis.com/*' => Http::response([
+            'access_token' => 'new-access',
+            'refresh_token' => 'new-refresh',
+            'expires_in' => 3600,
+        ]),
+    ]);
+
+    $this->withSession(['sender_email' => 'gmail@example.com'])
+        ->get('/auth/google-mail/callback?code=auth-code')
+        ->assertOk();
+
+    expect($this->sender->refresh())
+        ->address->toBe('gmail@example.com')
+        ->name->toBe('Gmail');
+});

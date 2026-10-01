@@ -71,9 +71,10 @@ class OAuth2MailerController extends Controller
             $sender_data['access_token'] = $response_data['access_token'] ?? $sender->mailer_data['access_token'];
             $sender_data['expires_at'] = now()->addSeconds($response_data['expires_in'] ?? 3600);
             $sender->mailer_data = $sender_data;
+            $this->applyAuthorizedIdentity($sender, $response_data);
             $sender->save();
         }
-        return response('Mail authorization successful');
+        return response('Mail authorization successful: ' . $sender->name . ' <' . $sender->address . '>', 200, ['Content-Type' => 'text/plain; charset=UTF-8']);
     }
     public function microsoftMailLogin(Request $request)
     {
@@ -138,9 +139,50 @@ class OAuth2MailerController extends Controller
             $sender_data['access_token'] = $response_data['access_token'] ?? $sender->mailer_data['access_token'];
             $sender_data['expires_at'] = now()->addSeconds($response_data['expires_in'] ?? 3600);
             $sender->mailer_data = $sender_data;
+            $this->applyAuthorizedIdentity($sender, $response_data);
             $sender->save();
         }
-        return response('Mail authorization successful');
+        return response('Mail authorization successful: ' . $sender->name . ' <' . $sender->address . '>', 200, ['Content-Type' => 'text/plain; charset=UTF-8']);
+    }
+
+    /**
+     * Sobrescribe email y nombre del remitente con los de la cuenta que ha autorizado,
+     * que es desde la que Google y Microsoft envían realmente los correos.
+     */
+    private function applyAuthorizedIdentity(EmailSender $sender, array $response_data): void
+    {
+        $claims = $this->idTokenClaims($response_data['id_token'] ?? null);
+
+        $email = $claims['email'] ?? $claims['preferred_username'] ?? null;
+        if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $taken = EmailSender::where('address', $email)->whereKeyNot($sender->getKey())->exists();
+            if ($taken) {
+                abort(409, 'The account ' . $email . ' is already registered as another sender');
+            }
+
+            $sender->address = $email;
+            $sender->auth_user = $email;
+        }
+
+        if (! empty($claims['name'])) {
+            $sender->name = mb_substr($claims['name'], 0, 150);
+        }
+    }
+
+    /**
+     * El id_token llega directamente del endpoint de token por TLS, así que se puede
+     * leer sin verificar la firma (OpenID Connect Core, 3.1.3.7).
+     */
+    private function idTokenClaims(?string $id_token): array
+    {
+        $payload = explode('.', (string) $id_token)[1] ?? null;
+        if (empty($payload)) {
+            return [];
+        }
+
+        $claims = json_decode(base64_decode(strtr($payload, '-_', '+/')), true);
+
+        return is_array($claims) ? $claims : [];
     }
 
     private function getProviderUrls($provider, $tenant = 'common', $url_type = 'auth_url')
