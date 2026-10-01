@@ -6,6 +6,7 @@ use Devlab\LaravelMailer\Models\EmailSender;
 use Illuminate\Console\Command;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Schema;
 
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\info;
@@ -47,6 +48,12 @@ class ManageMailersCommand extends Command
             return self::FAILURE;
         }
 
+        if (! Schema::hasColumns('email_senders', ['mailer', 'mailer_data'])) {
+            $this->error('La tabla email_senders no tiene las columnas mailer y mailer_data. Ejecuta: php artisan migrate');
+
+            return self::FAILURE;
+        }
+
         intro(' Laravel Mailer · Gestión de mailers ');
 
         do {
@@ -73,6 +80,10 @@ class ManageMailersCommand extends Command
                 $sender->save();
 
                 info(($action === 'create' ? 'Mailer registrado' : 'Mailer actualizado')." correctamente (ID {$sender->id}).");
+
+                if ($sender->mailer !== 'smtp') {
+                    $this->showAuthorizationUrl($sender);
+                }
             } else {
                 warning('Cambios descartados.');
             }
@@ -303,6 +314,23 @@ class ManageMailersCommand extends Command
             ->exists();
 
         return $exists ? 'Ya existe un mailer registrado con ese email.' : null;
+    }
+
+    protected function showAuthorizationUrl(EmailSender $sender): void
+    {
+        $slug = "{$sender->mailer}-mail";
+        $authorized = filled($sender->mailer_data['refresh_token'] ?? null);
+
+        note($authorized
+            ? 'La cuenta ya está autorizada. Si necesitas volver a autorizarla, abre esta URL en el navegador:'
+            : 'Abre esta URL en el navegador para autorizar la cuenta y generar los tokens:');
+
+        $this->line('  '.route("auth.{$slug}-login", ['sender_email' => $sender->address]));
+        $this->newLine();
+        $this->line('  <fg=gray>Redirect URI que debe estar registrada en '
+            .($sender->mailer === 'google' ? 'Google Cloud' : 'Azure').': '
+            .rtrim(config('app.url'), '/')."/auth/{$slug}/callback</>");
+        $this->newLine();
     }
 
     protected function showSummary(EmailSender $sender): void

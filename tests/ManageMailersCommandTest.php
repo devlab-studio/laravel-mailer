@@ -2,6 +2,7 @@
 
 use Devlab\LaravelMailer\Models\EmailSender;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 
 uses(RefreshDatabase::class);
 
@@ -40,6 +41,8 @@ it('registers a new google mailer', function () {
         ->expectsQuestion('Client ID', 'client-id')
         ->expectsQuestion('Client secret', 'client-secret')
         ->expectsConfirmation('¿Guardar los cambios?', 'yes')
+        ->expectsOutputToContain('http://localhost/auth/google-mail/login?sender_email=gmail%40example.com')
+        ->expectsOutputToContain('http://localhost/auth/google-mail/callback')
         ->expectsConfirmation('¿Quieres realizar otra operación?', 'no')
         ->assertSuccessful();
 
@@ -123,6 +126,7 @@ it('updates a microsoft mailer keeping secret, tokens and smtp columns', functio
         ->expectsQuestion('Client secret', '')
         ->expectsQuestion('Tenant ID', 'tenant-id')
         ->expectsConfirmation('¿Guardar los cambios?', 'yes')
+        ->expectsOutputToContain('http://localhost/auth/microsoft-mail/login?sender_email=ms%40example.com')
         ->expectsConfirmation('¿Quieres realizar otra operación?', 'no')
         ->assertSuccessful();
 
@@ -172,6 +176,14 @@ it('discards changes when not confirmed', function () {
         ->assertSuccessful();
 
     expect(EmailSender::count())->toBe(0);
+});
+
+it('fails when the mailer migration has not been run', function () {
+    Schema::dropColumns('email_senders', ['mailer', 'mailer_data']);
+
+    $this->artisan('laravel-mailer:mailers')
+        ->expectsOutputToContain('php artisan migrate')
+        ->assertFailed();
 });
 
 it('rejects an unknown mailer type', function () {

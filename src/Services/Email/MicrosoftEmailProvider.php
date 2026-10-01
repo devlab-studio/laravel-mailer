@@ -72,7 +72,7 @@ class MicrosoftEmailProvider implements EmailProvider
         EmailSender $account
     ): void {
         $response = Http::asForm()->post(
-            'https://login.microsoftonline.com/common/oauth2/v2.0/token',
+            'https://login.microsoftonline.com/'.($account->mailer_data['tenant_id'] ?? 'common').'/oauth2/v2.0/token',
             [
                 'client_id' => $account->mailer_data['client_id'] ?? '',
                 'client_secret' => $account->mailer_data['client_secret'] ?? '',

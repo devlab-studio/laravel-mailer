@@ -34,7 +34,7 @@ class OAuth2MailerController extends Controller
             .'&scope=email%20profile%20openid%20https://www.googleapis.com/auth/gmail.send'
             .'&access_type=offline'
             .'&prompt=consent'
-            .'&redirect_uri=' . env('APP_URL') . '/auth/google-mail/callback'
+            .'&redirect_uri=' . rtrim(config('app.url'), '/') . '/auth/google-mail/callback'
             ;
 
             // dd($url);
@@ -60,7 +60,7 @@ class OAuth2MailerController extends Controller
             'client_secret' => $sender->mailer_data['client_secret'],
             'grant_type' => 'authorization_code',
             'code' => $request->input('code'),
-            'redirect_uri' => env('APP_URL') . '/auth/google-mail/callback'
+            'redirect_uri' => rtrim(config('app.url'), '/') . '/auth/google-mail/callback'
         ]);
 
         $response_data = $response->json();
@@ -78,10 +78,6 @@ class OAuth2MailerController extends Controller
     public function microsoftMailLogin(Request $request)
     {
         $provider = 'microsoft';
-        $url = $this->getProviderUrls($provider, 'common', 'auth_url');
-        if (empty($url)) {
-            abort(500, 'Authorization URL not found for provider: ' . $provider);
-        }
 
         $sender_email = $request->input('sender_email', null);
         if (empty($sender_email)) {
@@ -92,6 +88,11 @@ class OAuth2MailerController extends Controller
             abort(404, 'Sender not found');
         }
 
+        $url = $this->getProviderUrls($provider, $sender->mailer_data['tenant_id'] ?? 'common', 'auth_url');
+        if (empty($url)) {
+            abort(500, 'Authorization URL not found for provider: ' . $provider);
+        }
+
         session(['sender_email' => $sender_email]);
         $url = $url
             .'?client_id=' . $sender->mailer_data['client_id']
@@ -99,7 +100,7 @@ class OAuth2MailerController extends Controller
             .'&scope=offline_access%20email%20profile%20openid%20https://graph.microsoft.com/Mail.Send'
             .'&response_mode=query'
             .'&prompt=consent'
-            .'&redirect_uri=' . env('APP_URL') . '/auth/microsoft-mail/callback'
+            .'&redirect_uri=' . rtrim(config('app.url'), '/') . '/auth/microsoft-mail/callback'
             ;
 
             // dd($url);
@@ -108,7 +109,6 @@ class OAuth2MailerController extends Controller
     public function microsoftMailCallback(Request $request)
     {
         $provider = 'microsoft';
-        $url = $this->getProviderUrls($provider, 'common', 'token_url');
 
         $sender_email = session('sender_email', null);
         if (empty($sender_email)) {
@@ -119,13 +119,15 @@ class OAuth2MailerController extends Controller
             abort(404, 'Sender not found');
         }
 
+        $url = $this->getProviderUrls($provider, $sender->mailer_data['tenant_id'] ?? 'common', 'token_url');
+
             // dd($url);
         $response = Http::asForm()->post($url, [
             'client_id' => $sender->mailer_data['client_id'],
             'client_secret' => $sender->mailer_data['client_secret'],
             'grant_type' => 'authorization_code',
             'code' => $request->input('code'),
-            'redirect_uri' => env('APP_URL') . '/auth/microsoft-mail/callback'
+            'redirect_uri' => rtrim(config('app.url'), '/') . '/auth/microsoft-mail/callback'
         ]);
 
         $response_data = $response->json();
