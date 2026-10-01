@@ -21,7 +21,7 @@ use function Laravel\Prompts\warning;
 
 class ManageMailersCommand extends Command
 {
-    public $signature = 'laravel-mailer:mailers
+    public $signature = 'mailer:config
         {--mailer= : Tipo de mailer (smtp, google, microsoft)}';
 
     public $description = 'Registra o modifica cuentas remitentes (SMTP, Google, Microsoft)';
