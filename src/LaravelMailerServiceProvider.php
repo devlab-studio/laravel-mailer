@@ -32,6 +32,8 @@ class LaravelMailerServiceProvider extends PackageServiceProvider
 
     public function packageRegistered()
     {
+        $this->registerOAuthMailers();
+
         if (self::$missingConfigMessageShown) {
             return;
         }
@@ -75,6 +77,19 @@ class LaravelMailerServiceProvider extends PackageServiceProvider
 
         // Load routes
         $this->loadRoutesFrom(__DIR__ . '/routes/web.php');
+    }
+
+    /**
+     * CustomMailChannel resuelve Mail::mailer('google'|'microsoft') aunque el envío
+     * real lo hagan la Gmail API y Microsoft Graph, así que basta con que existan.
+     */
+    protected function registerOAuthMailers(): void
+    {
+        foreach (['google', 'microsoft'] as $mailer) {
+            if (! config()->has("mail.mailers.{$mailer}")) {
+                config()->set("mail.mailers.{$mailer}", ['transport' => 'array']);
+            }
+        }
     }
 
     protected function outputMissingConfigMessage()

@@ -11,8 +11,6 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     config()->set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
-    // El canal resuelve Mail::mailer('microsoft'), igual que en el proyecto que usa el paquete
-    config()->set('mail.mailers.microsoft', ['transport' => 'array']);
 
     $this->sender = new EmailSender;
     $this->sender->forceFill([
