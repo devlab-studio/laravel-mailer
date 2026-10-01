@@ -10,4 +10,8 @@ class EmailSender extends Model
 {
     use HasFactory;
     use SoftDeletes;
+
+    protected $casts = [
+        'mailer_data' => 'array',
+    ];
 }

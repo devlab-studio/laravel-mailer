@@ -3,6 +3,7 @@
 namespace Devlab\LaravelMailer;
 
 use Devlab\LaravelMailer\Commands\LaravelMailerCommand;
+use Devlab\LaravelMailer\Commands\ManageMailersCommand;
 use Devlab\LaravelMailer\Listeners\ValidateSmtpConfiguration;
 use Illuminate\Mail\Events\MessageSending;
 use Spatie\LaravelPackageTools\Package;
@@ -20,7 +21,10 @@ class LaravelMailerServiceProvider extends PackageServiceProvider
             ->runsMigrations('create_email_senders_table')
             ->runsMigrations('create_emails_emails_attachments_table')
             ->runsMigrations('create_emails_table')
-            ->hasCommand(LaravelMailerCommand::class);
+            ->hasCommands([
+                LaravelMailerCommand::class,
+                ManageMailersCommand::class,
+            ]);
     }
 
     public function packageRegistered()
