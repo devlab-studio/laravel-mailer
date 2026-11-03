@@ -83,9 +83,9 @@ class CustomMailChannel
                 }
                 $email_message = new EmailMessage(
                     to: $to,
-                    replyTo: $message->replyTo ?? '',
+                    replyTo: is_array($message->replyTo) ? ($message->replyTo[0] ?? '') : ($message->replyTo ?? ''),
                     subject: $message->subject,
-                    html: $message->body,
+                    html: $bd_email->body,
                     fromName: $from_name,
                     cc: is_array($message->cc) ? $message->cc : [$message->cc],
                     bcc: is_array($message->bcc) ? $message->bcc : [$message->bcc],
