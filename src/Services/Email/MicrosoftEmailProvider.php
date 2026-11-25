@@ -15,22 +15,103 @@ class MicrosoftEmailProvider implements EmailProvider
     ): void {
         $this->ensureValidToken($account);
 
-         $payload = [
+
+
+        $payload = [
             'subject' => $message->subject,
 
             'body' => [
                 'contentType' => 'HTML',
                 'content' => $message->html,
             ],
-
-            'toRecipients' => [
-                [
-                    'emailAddress' => [
-                        'address' => $message->to,
-                    ],
-                ],
-            ],
         ];
+
+        if (!empty($message->to)) {
+            $addresses = [];
+            if (is_string($message->to)) {
+                $addresses = str_replace(',', ';', $message->to);
+                $addresses = str_replace(' ', '', $addresses);
+                $addresses = explode(';', $addresses);
+            } elseif (is_array($message->to)) {
+                $addresses = $message->to;
+            }
+            $recipients = [];
+            foreach ($addresses as $address) {
+                $recipients[] = [
+                    'emailAddress' => [
+                        'address' => $address,
+                    ],
+                ];
+            }
+            if (!empty($recipients)) {
+                $payload['toRecipients'] = $recipients;
+            }
+        }
+
+        if (!empty($message->cc)) {
+            $ccAddresses = [];
+            if (is_string($message->cc)) {
+                $ccAddresses = str_replace(',', ';', $message->cc);
+                $ccAddresses = str_replace(' ', '', $ccAddresses);
+                $ccAddresses = explode(';', $ccAddresses);
+            } elseif (is_array($message->cc)) {
+                $ccAddresses = $message->cc;
+            }
+            $ccRecipients = [];
+            foreach ($ccAddresses as $address) {
+                $ccRecipients[] = [
+                    'emailAddress' => [
+                        'address' => $address,
+                    ],
+                ];
+            }
+            if (!empty($ccRecipients)) {
+                $payload['ccRecipients'] = $ccRecipients;
+            }
+        }
+        if (!empty($message->bcc)) {
+            $bccAddresses = [];
+            if (is_string($message->bcc)) {
+                $bccAddresses = str_replace(',', ';', $message->bcc);
+                $bccAddresses = str_replace(' ', '', $bccAddresses);
+                $bccAddresses = explode(';', $bccAddresses);
+            } elseif (is_array($message->bcc)) {
+                $bccAddresses = $message->bcc;
+            }
+            $bccRecipients = [];
+            foreach ($bccAddresses as $address) {
+                $bccRecipients[] = [
+                    'emailAddress' => [
+                        'address' => $address,
+                    ],
+                ];
+            }
+            if (!empty($bccRecipients)) {
+                $payload['bccRecipients'] = $bccRecipients;
+            }
+        }
+
+        if (!empty($message->replyTo)) {
+            $replyToAddresses = [];
+            if (is_string($message->replyTo)) {
+                $replyToAddresses = str_replace(',', ';', $message->replyTo);
+                $replyToAddresses = str_replace(' ', '', $replyToAddresses);
+                $replyToAddresses = explode(';', $replyToAddresses);
+            } elseif (is_array($message->replyTo)) {
+                $replyToAddresses = $message->replyTo;
+            }
+            $replyToRecipients = [];
+            foreach ($replyToAddresses as $address) {
+                $replyToRecipients[] = [
+                    'emailAddress' => [
+                        'address' => $address,
+                    ],
+                ];
+            }
+            if (!empty($replyToRecipients)) {
+                $payload['replyTo'] = $replyToRecipients;
+            }
+        }
 
         if (!empty($message->attachments)) {
             $payload['attachments'] = array_map(
